@@ -2,7 +2,6 @@ package com.image.imageprocessing.io;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.nio.Buffer;
 
 import javax.imageio.ImageIO;
 

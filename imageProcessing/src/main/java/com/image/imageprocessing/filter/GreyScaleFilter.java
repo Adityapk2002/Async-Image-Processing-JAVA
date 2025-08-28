@@ -6,6 +6,10 @@ import javafx.scene.paint.Color;
 
 public class GreyScaleFilter implements ImageFilter {
 
+    public GreyScaleFilter() {
+
+    }
+
     @Override
     public BufferedImage filter(BufferedImage originalImage) {
         int width = originalImage.getWidth();
