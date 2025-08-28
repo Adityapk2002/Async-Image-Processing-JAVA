@@ -4,6 +4,9 @@ import javafx.scene.canvas.Canvas;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javafx.scene.Scene;
+import javafx.scene.Group;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
@@ -13,15 +16,18 @@ import javafx.stage.Stage;
 public class DrawMultipleImageOnCanvas {
 
     private static DrawMultipleImageOnCanvas instance; // it is singleton
-    private Queue<ImageData> queue = new LinkedBlockingQueue<>();
+    private final Queue<ImageData> queue = new LinkedBlockingQueue<>();
     private Canvas canvas;
     private GraphicsContext gc;
-    private boolean isDrawing = false;
-    private Stage primaryStage;
 
-    public static DrawMultipleImageOnCanvas getInstance() {
+    // Private constructor to prevent direct instantiation
+    private DrawMultipleImageOnCanvas() {
+    }
+
+    // Correct, thread-safe singleton implementation
+    public static synchronized DrawMultipleImageOnCanvas getInstance() {
         if (instance == null) {
-            return new DrawMultipleImageOnCanvas();
+            instance = new DrawMultipleImageOnCanvas();
         }
         return instance;
     }
@@ -31,7 +37,6 @@ public class DrawMultipleImageOnCanvas {
     }
 
     public void initialize(Stage primaryStage) {
-        this.primaryStage = primaryStage;
         this.canvas = new Canvas(1920, 1080);
         this.gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, 1920, 1080);
@@ -39,29 +44,30 @@ public class DrawMultipleImageOnCanvas {
         new AnimationTimer() {
             @Override
             public void handle(long now) {
-                // poll image from queue and draw on canvas and use stage to show the image
-                if (!isDrawing && queue.isEmpty()) {
-                    isDrawing = true;
-                    new Thread(() -> {
-                        drawNextImage();
-                    }).start();
+                // Poll the queue on every frame. If an image is available, draw it.
+                ImageData imageData = queue.poll();
+                if (imageData != null) {
+                    drawNextImage(imageData);
                 }
             }
         }.start();
+
+        Group root = new Group();
+        root.getChildren().add(canvas);
+        primaryStage.setScene(new Scene(root));
+        primaryStage.show();
+
     }
 
-    private void drawNextImage() {
-        ImageData imageData = queue.poll();
-
-        Platform.runLater(() -> {
-            if (imageData != null) {
-                gc.drawImage(SwingFXUtils.toFXImage(imageData.getImage(), null), imageData.getI(), imageData.getJ(),
-                        imageData.getX(), imageData.getY());
-                System.out
-                        .println(String.format("Drawing image at i: {} , j: {},", imageData.getI(), imageData.getJ()));
-            }
-        });
-
+    private void drawNextImage(ImageData imageData) {
+        // This method is called from AnimationTimer, which runs on the JavaFX
+        // Application Thread.
+        // No need for Platform.runLater().
+        gc.drawImage(SwingFXUtils.toFXImage(imageData.getImage(), null), imageData.getI(), imageData.getJ(),
+                imageData.getX(), imageData.getY());
+        // Using printf for formatted strings. The original String.format would throw an
+        // exception.
+        System.out.printf("Drawing image at x: %d, y: %d%n", imageData.getI(), imageData.getJ());
     }
 
 }

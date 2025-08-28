@@ -3,59 +3,41 @@ package com.image.imageprocessing.processor;
 import java.awt.image.BufferedImage;
 import com.image.imageprocessing.filter.ImageFilter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import com.image.imageprocessing.image.DrawMultipleImageOnCanvas;
 import com.image.imageprocessing.image.ImageData;
 
 public class ImageProcessor {
 
     // the work of executorService is to process all small small images
-    private ExecutorService executorService;
-    private DrawMultipleImageOnCanvas drawFn;
+    private final ExecutorService executorService;
 
     public ImageProcessor() {
         executorService = Executors.newFixedThreadPool(100);
-        drawFn = DrawMultipleImageOnCanvas.getInstance();
     }
 
-    public void processImage(BufferedImage image, int num, ImageFilter imageFilter) {
+    public void processImage(BufferedImage image, int num, ImageFilter imageFilter, DrawMultipleImageOnCanvas drawFn) {
         int numHorizontalImages = image.getWidth() / num;
         int numVerticalImages = image.getHeight() / num;
 
-        List<Future<ImageData>> futures = new ArrayList<>();
-
         for (int i = 0; i < numHorizontalImages; i++) {
             for (int j = 0; j < numVerticalImages; j++) {
-                final int x = j * num;
-                final int y = i * num;
-                BufferedImage subImage = image.getSubimage(i * num, j * num, num, num);
-                Future<ImageData> future = executorService.submit(new Callable<ImageData>() {
-                    @Override
-                    public ImageData call() {
-                        // return null because we use callable and in it we have to return something
-                        // runnable means returns nothing
-                        BufferedImage result = imageFilter.filter(subImage);
-                        return new ImageData(result, x, y, num, num); // here we want i and j so that we can draw that
-                                                                      // image on canvas from i and j so we will get at
-                                                                      // which spot we have to put
-                    }
-                });
-                futures.add(future);
-            }
-        }
-        for (Future<ImageData> future : futures) {
-            try {
-                drawFn.addImageToQueue(future.get());
-            } catch (Exception ex) {
-                System.err.println("Not able to push the image into the queue");
-            }
-        }
+                final int x = i * num;
+                final int y = j * num;
+                final BufferedImage subImage = image.getSubimage(x, y, num, num);
 
+                // Submit a task (as a Runnable) to the thread pool.
+                // The task will process the sub-image and add it to the drawing queue.
+                executorService.submit(() -> {
+                    BufferedImage result = imageFilter.filter(subImage);
+                    ImageData imageData = new ImageData(result, x, y, num, num);
+                    drawFn.addImageToQueue(imageData);
+                });
+            }
+        }
+        // The second loop that added images to the queue has been removed.
+        // It was redundant because the task now adds the image to the queue itself.
+        // It also blocked the main thread with future.get() unnecessarily.
     }
 }

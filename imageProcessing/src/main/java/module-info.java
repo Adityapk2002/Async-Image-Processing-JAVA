@@ -2,8 +2,6 @@ module com.image.imageprocessing {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
-    requires javafx.swing;
-    requires java.desktop;
 
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;
@@ -12,9 +10,11 @@ module com.image.imageprocessing {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires java.desktop;
+    requires javafx.swing;
 
     opens com.image.imageprocessing to javafx.fxml;
 
     exports com.image.imageprocessing;
-    exports com.image.imageprocessing.io;
+    exports com.image.imageprocessing.image;
 }

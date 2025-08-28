@@ -1,6 +1,7 @@
 package com.image.imageprocessing;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -23,7 +24,8 @@ public class HelloApplication extends Application {
         drawMultipleImageOnCanvas.initialize(stage);
         ImageProcessor processor = new ImageProcessor();
         ImageFilter imageFilter = new GreyScaleFilter();
-        processor.processImage(image, 10, imageFilter);
+        processor.processImage(image, 10, imageFilter, drawMultipleImageOnCanvas);
+        Platform.setImplicitExit(false);
     }
 
     public static void main(String[] args) {
